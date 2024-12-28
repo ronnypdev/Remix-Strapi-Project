@@ -13,7 +13,6 @@ export type ContactRecord = ContactMutation & {
   createdAt: string;
 };
 
-
 export function flattenAttributes(data: any): any {
   // Base case for recursion
   if (!data) return null;
@@ -60,7 +59,7 @@ const url = process.env.STRAPI_URL || "http://127.0.0.1:1337";
 
 export async function getContacts(query?: string | null) {
   try {
-    const response = await fetch(url + "/api/contacts/");
+    const response = await fetch(url + "/api/contacts");
     const data = await response.json();
     const flattenAttributesData = flattenAttributes(data.data);
     return flattenAttributesData;
@@ -69,9 +68,24 @@ export async function getContacts(query?: string | null) {
   }
 }
 
-export async function createEmptyContact() {
-
+export async function createContact(data: any) {
+  try {
+    const response = await fetch(url + "/api/contacts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ data: { ...data } }),
+    });
+    const responseData = await response.json();
+    const flattenAttributesData = flattenAttributes(responseData.data);
+    return flattenAttributesData;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Oh no! Something went wrong!");
+  }
 }
+
 
 export async function getContact(id: string) {
   try {
@@ -80,7 +94,8 @@ export async function getContact(id: string) {
     const flattenAttributesData = flattenAttributes(data.data);
     return flattenAttributesData;
   } catch (error) {
-    console.log(error)
+    console.log(error);
+    throw new Error("Oh no! Something went wrong!");
   }
 }
 
@@ -305,4 +320,4 @@ const data = [
     last: "Jensen",
     twitter: "@jenseng",
   },
-]
+];
