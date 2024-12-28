@@ -1,3 +1,5 @@
+import qs from "qs";
+
 type ContactMutation = {
   id?: string;
   first?: string;
@@ -54,17 +56,36 @@ export function flattenAttributes(data: any): any {
   return flattened;
 }
 
-
 const url = process.env.STRAPI_URL || "http://127.0.0.1:1337";
 
-export async function getContacts(query?: string | null) {
+export async function getContacts(q: string | null) {
+
+  const query = qs.stringify({
+    filters: {
+      $or: [
+        { first: { $contains: q }},
+        { last: { $contains: q }},
+        { twitter: { $contains: q }},
+      ]
+    },
+    pagination: {
+      pageSize: 50,
+      page: 1,
+    },
+  })
+
   try {
-    const response = await fetch(url + "/api/contacts");
+    const response = await fetch( url + "/api/contacts?" + query);
     const data = await response.json();
     const flattenAttributesData = flattenAttributes(data.data);
     return flattenAttributesData;
   } catch (error) {
-    console.log(error)
+    console.log(error);
+    // throw new Error("Oh no! Something went wrong!");
+    throw new Response("Oh no! Something went wrong!", {
+      status: 500,
+      statusText: "This is my custom error!"
+    });
   }
 }
 
@@ -86,7 +107,6 @@ export async function createContact(data: any) {
   }
 }
 
-
 export async function getContact(id: string) {
   try {
     const response = await fetch(url + "/api/contacts/" + id);
@@ -99,12 +119,35 @@ export async function getContact(id: string) {
   }
 }
 
-export async function updateContact(id: string, updates: ContactMutation) {
-
+export async function updateContactById(id: string, updates: ContactMutation) {
+  try {
+    const response = await fetch(url + "/api/contacts/" + id, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ data: { ...updates} }),
+    });
+    const responseData = await response.json();
+    const flattenAttributesData = flattenAttributes(responseData.data);
+    return flattenAttributesData;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Oh no! Something went wrong!");
+  }
 }
 
 export async function deleteContact(id: string) {
-
+  try {
+    const response = await fetch(url + "/api/contacts/" + id, {
+      method: "DELETE",
+    });
+    const data = await response.json();
+    const flattenAttributesData = flattenAttributes(data.data);
+    return flattenAttributesData;
+  } catch (error) {
+    throw new Error("Oh no! Something went wrong!");
+  }
 }
 
 const data = [
